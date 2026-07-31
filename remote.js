@@ -64,6 +64,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof stopSpindleSound === 'function') stopSpindleSound();
         const lcd = document.getElementById('remote-lcd');
         if (lcd) lcd.style.background = "#050505";
+
+        const modeTag = document.getElementById('rem-mode');
+        if (modeTag) modeTag.textContent = "JOG";
+
         showRemoteMsg("POWER OFF", "SYSTEM SHUTDOWN");
     });
 
@@ -77,6 +81,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const main = document.getElementById('lcd-main-screen');
             const msg = document.getElementById('lcd-startup-msg');
             if (lcd && main && msg) { main.style.display = 'block'; msg.style.display = 'none'; lcd.style.background = ""; }
+
+            const modeTag = document.getElementById('rem-mode');
+            if (modeTag) modeTag.textContent = window.jogStep ? "STEP" : "JOG";
+
             showRemoteMsg("HOMING...", "LIFTING Z...");
 
             const checkZ = setInterval(() => {
