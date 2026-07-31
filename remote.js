@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (lcd) lcd.style.background = "#050505";
 
         const modeTag = document.getElementById('rem-mode');
-        if (modeTag) modeTag.textContent = "JOG";
+        if (modeTag) modeTag.textContent = "OFFLINE";
 
         showRemoteMsg("POWER OFF", "SYSTEM SHUTDOWN");
     });
