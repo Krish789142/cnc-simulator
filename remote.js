@@ -418,29 +418,35 @@ document.addEventListener('DOMContentLoaded', () => {
         } else { window.currentLineIndex = 0; showRemoteMsg("RESET", "LINE 0"); setTimeout(hideRemoteMsg, 1500); }
     });
 
-    // --- MASTER NUMERIC KEY HANDLER (MOUSEDOWN FOR INSTANT RESPONSE) ---
+    // --- MASTER NUMERIC KEY HANDLER ---
     ['0','1','2','3','4','5','6','7','8','9','menu'].forEach(k => {
         const btn = document.getElementById('key-'+k);
         if (!btn) return;
 
-        btn.addEventListener('mousedown', (e) => {
+        const handleInput = (e) => {
             if (window.machineState === 'OFF') return;
 
-            // CASE A: STEP INPUT MODE (High Priority)
             if (isSettingStep) {
-                e.preventDefault(); e.stopPropagation();
+                e.preventDefault();
+                e.stopPropagation();
+
                 const val = (k === 'menu') ? '.' : k;
                 if (val === '.' && stepInputBuffer.includes('.')) return;
+
                 stepInputBuffer += val;
                 showRemoteMsg("SET STEP DIST", stepInputBuffer + " mm");
-                return;
+                console.log("Input:", val, "Buffer:", stepInputBuffer);
             }
-        });
+        };
 
+        // Add both touch and mouse listeners
+        btn.addEventListener('mousedown', handleInput);
+        btn.addEventListener('touchstart', (e) => { handleInput(e); }, { passive: false });
+
+        // Original button functions for non-input mode
         btn.addEventListener('click', (e) => {
             if (window.machineState === 'OFF' || isSettingStep) return;
 
-            // CASE B: NORMAL MODE (Non-input)
             // 0 -> Speed Toggle
             if (k === '0' && !window.jogStep) {
                 if (window.feedOverride > 80) {
