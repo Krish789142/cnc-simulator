@@ -303,42 +303,40 @@ document.addEventListener('DOMContentLoaded', () => {
         b.addEventListener('touchstart', startJog); b.addEventListener('touchend', stopJog);
     });
 
-    // --- SHIFT BUTTON (MOMENTARY) ---
+    // --- SHIFT BUTTON (TOGGLE) ---
     const shiftBtn = document.getElementById('key-shift');
     if (shiftBtn) {
-        const setShift = (val) => {
+        shiftBtn.addEventListener('click', (e) => {
             if (window.machineState === 'OFF' || window.isSimulating || isSettingStep) return;
-            window.isShiftPressed = val;
+
+            // Toggle Shift state
+            window.isShiftPressed = !window.isShiftPressed;
+            window.jogStep = window.isShiftPressed; // Keep JogStep in sync for movement logic
 
             // Update Button Style
-            shiftBtn.style.background = val ? "#ffae00" : "";
-            shiftBtn.style.color = val ? "#000" : "";
+            shiftBtn.style.background = window.isShiftPressed ? "#ffae00" : "";
+            shiftBtn.style.color = window.isShiftPressed ? "#000" : "";
 
             // Update LCD Mode Tag
             const modeTag = document.getElementById('rem-mode');
+            const stepTag = document.getElementById('rem-step-val');
+
             if (modeTag) {
-                if (val) {
+                if (window.isShiftPressed) {
                     modeTag.textContent = "STEP";
-                    const stepTag = document.getElementById('rem-step-val');
                     if (stepTag) {
                         stepTag.textContent = (window.stepValue || 0.1).toFixed(3);
                         stepTag.style.display = 'block';
                     }
-                    window.jogStep = true;
+                    showRemoteMsg("MODE: STEP", "DIST: " + (window.stepValue || 0.1) + "mm");
                 } else {
                     modeTag.textContent = "JOG";
-                    const stepTag = document.getElementById('rem-step-val');
                     if (stepTag) stepTag.style.display = 'none';
-                    window.jogStep = false;
+                    showRemoteMsg("MODE: JOG", "CONTINUOUS");
                 }
             }
-        };
-
-        shiftBtn.addEventListener('mousedown', () => setShift(true));
-        shiftBtn.addEventListener('mouseup', () => setShift(false));
-        shiftBtn.addEventListener('mouseleave', () => setShift(false));
-        shiftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); setShift(true); }, { passive: false });
-        shiftBtn.addEventListener('touchend', (e) => { e.preventDefault(); setShift(false); }, { passive: false });
+            setTimeout(hideRemoteMsg, 1000);
+        });
     }
 
     // --- ZERO SETTING (CLEAR) ---
