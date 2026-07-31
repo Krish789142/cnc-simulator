@@ -73,6 +73,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- OK BUTTON (FOR STEP SETTING & CONFIRMATION) ---
     document.getElementById('key-ok')?.addEventListener('click', () => {
+        if (window.machineState === 'OFF') return;
+
         if (isWaitingForHome) {
             isWaitingForHome = false;
             window.targetPos.z = 200; // Lift to safe height
@@ -98,29 +100,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }, 100);
         } else {
-            // STEP SETTING LOGIC
+            // STEP VALUE SETTING
             if (!isSettingStep) {
                 isSettingStep = true;
                 stepInputBuffer = "";
-                showRemoteMsg("SET STEP DIST", "ENTER & PRESS OK");
+                showRemoteMsg("SET STEP DIST", "USE NUMS + OK");
             } else {
                 let val = parseFloat(stepInputBuffer);
                 if (!isNaN(val) && val > 0) {
                     window.stepValue = val;
-                    window.jogStep = true;
-                    showRemoteMsg("STEP MODE: ON", "STEP: " + val.toFixed(3) + "mm");
+                    showRemoteMsg("STEP VALUE SET", val.toFixed(3) + " mm");
 
                     const stepTag = document.getElementById('rem-step-val');
-                    if(stepTag) { stepTag.textContent = val.toFixed(3); stepTag.style.display = 'block'; }
-                    const modeTag = document.getElementById('rem-mode');
-                    if(modeTag) modeTag.textContent = "STEP";
+                    if(stepTag) {
+                        stepTag.textContent = val.toFixed(3);
+                        if(window.jogStep) stepTag.style.display = 'block';
+                    }
                 } else {
-                    window.jogStep = false;
-                    showRemoteMsg("STEP MODE: OFF", "CONTINUOUS");
-                    const modeTag = document.getElementById('rem-mode');
-                    if(modeTag) modeTag.textContent = "JOG";
-                    const stepTag = document.getElementById('rem-step-val');
-                    if(stepTag) stepTag.style.display = 'none';
+                    showRemoteMsg("INVALID VALUE", "KEEP OLD STEP");
                 }
                 isSettingStep = false;
                 setTimeout(hideRemoteMsg, 1500);
