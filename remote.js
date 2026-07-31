@@ -196,8 +196,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- SPINDLE TOGGLE (KEY 5) & GO TO ORIGIN (SHIFT + 5) ---
     document.getElementById('key-5')?.addEventListener('click', () => {
-        if (window.machineState === 'OFF' || window.isSimulating) return;
-        if (window.isShiftPressed) {
+        if (window.machineState === 'OFF' || window.isSimulating || isSettingStep) return;
+        if (window.jogStep) {
             // GO TO ORIGIN (Work Zero)
             window.targetPos.z = 200; // Safe Lift
             window.machineState = 'AUTO';
@@ -239,8 +239,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- HOME (SHIFT + 4) ---
     document.getElementById('key-4')?.addEventListener('click', () => {
-        if (window.machineState === 'OFF' || window.isSimulating) return;
-        if (window.isShiftPressed) {
+        if (window.machineState === 'OFF' || window.isSimulating || isSettingStep) return;
+        if (window.jogStep) {
             isWaitingForHome = true;
             const msg = document.getElementById('lcd-startup-msg');
             const main = document.getElementById('lcd-main-screen');
@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- SHIFT TOGGLE (SWITCH BETWEEN JOG AND STEP MODE) ---
     const shiftBtn = document.getElementById('key-shift');
     shiftBtn?.addEventListener('click', () => {
-        if (window.machineState === 'OFF' || window.isSimulating) return;
+        if (window.machineState === 'OFF' || window.isSimulating || isSettingStep) return;
 
         // Toggle Jog/Step mode
         window.jogStep = !window.jogStep;
@@ -331,8 +331,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- ZERO SETTING (CLEAR) ---
     document.getElementById('key-clear')?.addEventListener('click', () => {
-        if (isSettingStep || window.machineState === 'OFF') return;
-        if(window.isShiftPressed) { window.workOffset.z = window.toolPos.z; showRemoteMsg("Z AXIS", "ZERO SET"); }
+        if (window.machineState === 'OFF' || window.isSimulating || isSettingStep) return;
+        if(window.jogStep) { window.workOffset.z = window.toolPos.z; showRemoteMsg("Z AXIS", "ZERO SET"); }
         else { window.workOffset.x = window.toolPos.x; window.workOffset.y = window.toolPos.y; showRemoteMsg("XY AXIS", "ZERO SET"); }
         setTimeout(hideRemoteMsg, 1500);
     });
@@ -355,11 +355,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- RUN / GREEN BUTTON (AUTO MODE) ---
     document.getElementById('key-run')?.addEventListener('click', () => {
-        if (window.machineState === 'OFF') { showRemoteMsg("ERROR", "POWER OFF"); return; }
+        if (window.machineState === 'OFF' || isSettingStep) { showRemoteMsg("ERROR", "POWER OFF"); return; }
         if (!window.isHomed) { showRemoteMsg("ERROR", "HOME MACHINE FIRST"); setTimeout(hideRemoteMsg, 2000); return; }
 
         if (window.gcodeLines && window.gcodeLines.length > 0) {
-            const isResuming = window.isShiftPressed && window.isPaused;
+            const isResuming = window.jogStep && window.isPaused;
 
             if (isResuming) {
                 window.isPaused = false;
@@ -389,7 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- PAUSE & STOP ---
     document.getElementById('key-pause')?.addEventListener('click', () => {
-        if (window.machineState === 'OFF') return;
+        if (window.machineState === 'OFF' || isSettingStep) return;
         if (window.isSimulating) {
             window.isSimulating = false; window.isPaused = true; window.machineState = 'READY'; window.spindleOn = false;
             if (typeof stopSpindleSound === 'function') stopSpindleSound();
@@ -400,7 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('key-stop')?.addEventListener('click', () => {
-        if (window.machineState === 'OFF') return;
+        if (window.machineState === 'OFF' || isSettingStep) return;
         if (window.machineState === 'HOMING' || window.isHomingInProgress) {
             window.machineState = 'READY';
             window.isHomingInProgress = false;
