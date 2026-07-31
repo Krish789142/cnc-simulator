@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (remRPM) remRPM.textContent = window.spindleOn ? Math.round(window.targetRPM) : 0;
 
         const remFeed = document.getElementById('rem-feed');
-        if (remFeed) remFeed.textContent = Math.round(25000 * (window.feedOverride/100));
+        if (remFeed) remFeed.textContent = Math.round(25000 * (window.feedOverride/100)) + " (" + window.feedOverride + "%)";
     };
 
     // --- MACHINE POWER CONTROL (TOP BUTTONS) ---
