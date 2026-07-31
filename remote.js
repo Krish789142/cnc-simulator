@@ -98,12 +98,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     lcd.style.background = "";
                 }
 
+                // Ensure mode reflects current jog state
                 const modeTag = document.getElementById('rem-mode');
                 if (modeTag) modeTag.textContent = window.jogStep ? "STEP" : "JOG";
 
                 showRemoteMsg("HOMING...", "LIFTING Z...");
 
-                // 1. Lift Z to safe height first
                 window.targetPos.z = 200;
                 window.machineState = 'HOMING';
 
@@ -119,13 +119,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // CASE 2: Machine is READY and already HOMED (Set Step)
+            // CASE 2: Step Distance Setting (ONLY when READY and HOMED)
             if (window.machineState === 'READY' && window.isHomed === true) {
                 if (!isSettingStep) {
+                    // Enter Input Mode
                     isSettingStep = true;
                     stepInputBuffer = "";
                     showRemoteMsg("SET STEP DIST", "ENTER & PRESS OK");
                 } else {
+                    // Confirm and Exit Input Mode
                     let val = parseFloat(stepInputBuffer);
                     if (!isNaN(val) && val > 0) {
                         window.stepValue = val;
@@ -137,16 +139,20 @@ document.addEventListener('DOMContentLoaded', () => {
                             if(window.jogStep) stepTag.style.display = 'block';
                         }
                     } else {
-                        showRemoteMsg("INVALID VALUE", "KEEP OLD STEP");
+                        showRemoteMsg("CANCELLED", "KEEPING OLD STEP");
                     }
                     isSettingStep = false;
+                    stepInputBuffer = "";
                     setTimeout(hideRemoteMsg, 1500);
                 }
                 return;
             }
 
-            // CASE 3: Guard
-            if (!window.isHomed && window.machineState !== 'HOMING' && window.machineState !== 'BOOTING') {
+            // CASE 3: Trying to set step too early
+            if (window.machineState === 'BOOTING' && !isWaitingForHome) {
+                showRemoteMsg("PLEASE WAIT", "SYSTEM LOADING...");
+                setTimeout(hideRemoteMsg, 1500);
+            } else if (!window.isHomed) {
                 showRemoteMsg("ERROR", "HOME MACHINE FIRST");
                 setTimeout(hideRemoteMsg, 1500);
             }
