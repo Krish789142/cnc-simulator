@@ -258,16 +258,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!b) return;
 
         const startJog = (e) => {
+            // IF SETTING STEP, IGNORE JOG COMPLETELY
+            if (isSettingStep) return;
+
+            if(window.machineState !== 'READY' || window.isSimulating || isWaitingForHome) return;
             e.preventDefault();
-            if(window.machineState !== 'READY' || window.isSimulating || isSettingStep || isWaitingForHome) return;
 
             if (!window.isHomed) {
                 showRemoteMsg("ERROR", "HOME MACHINE FIRST");
                 setTimeout(hideRemoteMsg, 1500);
                 return;
             }
-
-            const speedMult = 1.0; // Speed override handled by '0' key now
 
             if (window.jogStep && window.stepValue > 0) {
                 // STEP MOVEMENT
@@ -280,7 +281,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (k === 'key-3') window.targetPos.z = Math.max(0, window.toolPos.z - step);
 
                 window.machineState = 'AUTO';
-                // Keep target updated to prevent jumping
                 setTimeout(() => { if(window.machineState === 'AUTO') window.machineState = 'READY'; }, 200);
             } else {
                 // CONTINUOUS MOVEMENT
@@ -418,107 +418,75 @@ document.addEventListener('DOMContentLoaded', () => {
         } else { window.currentLineIndex = 0; showRemoteMsg("RESET", "LINE 0"); setTimeout(hideRemoteMsg, 1500); }
     });
 
-    // --- NUMERIC KEYS (GEAR, PROBE & SPEED TOGGLE) ---
-    ['0','1','2','3','4','5','6','7','8','9','clear'].forEach(k => {
-        document.getElementById('key-'+k)?.addEventListener('click', () => {
+    // --- MASTER NUMERIC KEY HANDLER (MOUSEDOWN FOR INSTANT RESPONSE) ---
+    ['0','1','2','3','4','5','6','7','8','9','menu'].forEach(k => {
+        const btn = document.getElementById('key-'+k);
+        if (!btn) return;
+
+        btn.addEventListener('mousedown', (e) => {
             if (window.machineState === 'OFF') return;
 
+            // CASE A: STEP INPUT MODE (High Priority)
             if (isSettingStep) {
-                const val = (k === 'clear') ? '.' : k;
+                e.preventDefault(); e.stopPropagation();
+                const val = (k === 'menu') ? '.' : k;
                 if (val === '.' && stepInputBuffer.includes('.')) return;
                 stepInputBuffer += val;
                 showRemoteMsg("SET STEP DIST", stepInputBuffer + " mm");
                 return;
             }
+        });
 
-            // SPEED TOGGLE (KEY 0 - ABOVE GREEN BUTTON)
-            if (k === '0' && !window.isShiftPressed) {
+        btn.addEventListener('click', (e) => {
+            if (window.machineState === 'OFF' || isSettingStep) return;
+
+            // CASE B: NORMAL MODE (Non-input)
+            // 0 -> Speed Toggle
+            if (k === '0' && !window.jogStep) {
                 if (window.feedOverride > 80) {
-                    window.feedOverride = 60; // Slow: 15000 (60% of 25000)
+                    window.feedOverride = 60;
                     showRemoteMsg("MODE: SLOW (S)", "FEED 15000");
                 } else {
-                    window.feedOverride = 100; // High: 25000
+                    window.feedOverride = 100;
                     showRemoteMsg("MODE: HIGH (H)", "FEED 25000");
                 }
                 updateGearDisplay();
                 setTimeout(hideRemoteMsg, 1500);
-                return;
             }
-
-            // FEED & SPINDLE GEAR (7 / 1)
-            if (k === '7') {
-                if (window.isShiftPressed) {
-                    // SPINDLE SPEED UP (GEAR)
-                    const gears = [6000, 9000, 12000, 15000, 18000, 21000, 24000];
-                    let idx = gears.indexOf(window.targetRPM);
-                    if (idx < gears.length - 1) {
-                        window.targetRPM = gears[idx + 1];
-                        // UPDATE AUDIO WHEN GEAR CHANGES
-                        if (typeof updateSpindleAudio === 'function') updateSpindleAudio(window.targetRPM);
-                    }
-                    showRemoteMsg("SPINDLE GEAR", window.targetRPM + " RPM");
+            // 5 -> Spindle Toggle
+            else if (k === '5' && !window.jogStep) {
+                window.spindleOn = !window.spindleOn;
+                if (window.spindleOn) {
+                    if (window.targetRPM === 0) window.targetRPM = 18000;
+                    if (typeof startSpindleSound === 'function') startSpindleSound();
+                    showRemoteMsg("SPINDLE ON", window.targetRPM + " RPM");
                 } else {
-                    window.feedOverride = Math.min(120, window.feedOverride + 10);
-                    showRemoteMsg("FEED UP", "FEED: " + window.feedOverride + "%");
+                    if (typeof stopSpindleSound === 'function') stopSpindleSound();
+                    showRemoteMsg("SPINDLE OFF", "0 RPM");
                 }
+                updateGearDisplay();
+                setTimeout(hideRemoteMsg, 1500);
+            }
+            // 7/1 -> Gear Override
+            else if (k === '7' && window.jogStep) {
+                const gears = [6000, 9000, 12000, 15000, 18000, 21000, 24000];
+                let idx = gears.indexOf(window.targetRPM);
+                if (idx < gears.length - 1) {
+                    window.targetRPM = gears[idx + 1];
+                    if (typeof updateSpindleAudio === 'function') updateSpindleAudio(window.targetRPM);
+                }
+                showRemoteMsg("SPINDLE GEAR", window.targetRPM + " RPM");
                 updateGearDisplay(); setTimeout(hideRemoteMsg, 1000);
             }
-            else if (k === '1') {
-                if (window.isShiftPressed) {
-                    // SPINDLE SPEED DOWN (GEAR)
-                    const gears = [6000, 9000, 12000, 15000, 18000, 21000, 24000];
-                    let idx = gears.indexOf(window.targetRPM);
-                    if (idx > 0) {
-                        window.targetRPM = gears[idx - 1];
-                        // UPDATE AUDIO WHEN GEAR CHANGES
-                        if (typeof updateSpindleAudio === 'function') updateSpindleAudio(window.targetRPM);
-                    }
-                    showRemoteMsg("SPINDLE GEAR", window.targetRPM + " RPM");
-                } else {
-                    window.feedOverride = Math.max(10, window.feedOverride - 10);
-                    showRemoteMsg("FEED DOWN", "FEED: " + window.feedOverride + "%");
+            else if (k === '1' && window.jogStep) {
+                const gears = [6000, 9000, 12000, 15000, 18000, 21000, 24000];
+                let idx = gears.indexOf(window.targetRPM);
+                if (idx > 0) {
+                    window.targetRPM = gears[idx - 1];
+                    if (typeof updateSpindleAudio === 'function') updateSpindleAudio(window.targetRPM);
                 }
+                showRemoteMsg("SPINDLE GEAR", window.targetRPM + " RPM");
                 updateGearDisplay(); setTimeout(hideRemoteMsg, 1000);
-            }
-            // MOBILE PROBE (SHIFT + 0)
-            else if (k === '0' && window.isShiftPressed) {
-                if (window.machineState === 'OFF' || !window.isHomed) {
-                    showRemoteMsg("ERROR", !window.isHomed ? "HOME FIRST" : "POWER OFF");
-                    setTimeout(hideRemoteMsg, 1500);
-                    return;
-                }
-
-                showRemoteMsg("MOBILE PROBE", "SENSING...");
-                window.machineState = 'PROBING';
-
-                // Actual material Z (Mat Z) from UI or default 18mm
-                const mz = parseFloat(document.getElementById('mat-z')?.value || 18);
-
-                // FIX: Sync target with current tool position to prevent XY movement
-                window.targetPos.x = window.toolPos.x;
-                window.targetPos.y = window.toolPos.y;
-                window.targetPos.z = mz;
-
-                let probeState = "DESCENDING";
-                const checkProbe = setInterval(() => {
-                    // 1. Check if touched surface
-                    if (probeState === "DESCENDING" && Math.abs(window.toolPos.z - mz) < 0.5) {
-                        probeState = "LIFTING";
-                        window.workOffset.z = mz; // IMMEDIATELY SET Z0
-                        showRemoteMsg("Z0 SET OK", "LIFTING 20mm");
-                        window.targetPos.z = mz + 20; // IMMEDIATELY LIFT
-                    }
-
-                    // 2. Finish once lifted (Wait until it reaches EXACTLY mz + 20)
-                    if (probeState === "LIFTING" && Math.abs(window.toolPos.z - (mz + 20)) < 0.1) {
-                        clearInterval(checkProbe);
-                        window.machineState = 'READY';
-                        showRemoteMsg("PROBE OK", "Z @ 20.000");
-                        setTimeout(hideRemoteMsg, 1500);
-                    }
-
-                    if (window.machineState === 'OFF') clearInterval(checkProbe);
-                }, 30); // Faster check
             }
         });
     });
