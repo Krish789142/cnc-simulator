@@ -196,6 +196,61 @@ body::before {
   box-shadow: 0 0 20px rgba(0,255,200,0.1), inset 0 0 10px rgba(0,255,200,0.05);
 }
 .logo-icon svg { width: 24px; height: 24px; }
+/* Origin Selector Grid */
+.origin-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 10px 15px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  margin: 5px 15px 15px;
+  border: 1px solid var(--glass-border);
+}
+
+.origin-btn {
+  aspect-ratio: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.origin-btn:hover {
+  background: rgba(0, 255, 200, 0.1);
+  border-color: var(--teal);
+}
+
+.origin-btn.active {
+  background: var(--teal);
+  border-color: var(--teal);
+  box-shadow: 0 0 10px var(--teal);
+}
+
+/* Dots inside buttons to represent position */
+.origin-btn::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  border-radius: 50%;
+  opacity: 0.6;
+}
+
+.origin-btn.tl::after { top: 4px; left: 4px; }
+.origin-btn.tr::after { top: 4px; right: 4px; }
+.origin-btn.ct::after { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.origin-btn.bl::after { bottom: 4px; left: 4px; }
+.origin-btn.br::after { bottom: 4px; right: 4px; }
+
+.origin-btn.active::after {
+  background: #000;
+  opacity: 1;
+}
+
 .brand {
   display: block;
   font-family: 'Orbitron', sans-serif;
