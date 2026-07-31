@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CNC Router System — CNC Router Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+<div id="bg-canvas"></div>
+<div class="particle-field" id="particles"></div>
+
+<!-- SIDEBAR NAV -->
+<nav class="sidebar" id="sidebar">
+  <div class="logo-block">
+    <div class="logo-icon">
+      <svg viewBox="0 0 40 40" fill="none">
+        <path d="M5 5 L35 5 L35 15 L25 15 L25 35 L15 35 L15 15 L5 15 Z" stroke="url(#grad1)" stroke-width="2" fill="none"/>
+        <path d="M10 20 L30 20" stroke="url(#grad1)" stroke-width="1.5" stroke-dasharray="3 2"/>
+        <circle cx="20" cy="27" r="4" stroke="url(#grad1)" stroke-width="1.5" fill="rgba(0,255,200,0.1)"/>
+        <defs>
+          <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#00ffc8"/>
+            <stop offset="100%" stop-color="#0080ff"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+    <div class="logo-text">
+      <span class="brand">CNC ROUTER SYSTEM</span>
+      <span class="sub">Professional Solutions</span>
+    </div>
+  </div>
+
+  <div class="nav-section-label">MATERIAL SET</div>
+  <div class="sidebar-material-set">
+    <div class="input-group">
+      <label>Width (X)</label>
+      <input type="number" id="mat-x" value="1220" placeholder="mm">
+    </div>
+    <div class="input-group">
+      <label>Length (Y)</label>
+      <input type="number" id="mat-y" value="2440" placeholder="mm">
+    </div>
+    <div class="input-group">
+      <label>Thick (Z)</label>
+      <input type="number" id="mat-z" value="18" placeholder="mm">
+    </div>
+    <button class="btn-set-material" id="btn-apply-material">SET MATERIAL</button>
+    <button class="btn-auto-zero" id="btn-auto-zero-mat" onclick="window.setJobZero()">SET JOB ZERO</button>
+
+    <div class="nav-section-label" style="margin-top:15px; border:none; padding-left:0;">WORK ORIGIN</div>
+    <div class="origin-selector-grid">
+      <button class="origin-btn tl" onclick="window.setOrigin('TL', this)" title="Top Left"></button>
+      <button class="origin-btn tr" onclick="window.setOrigin('TR', this)" title="Top Right"></button>
+      <button class="origin-btn ct" onclick="window.setOrigin('CT', this)" title="Center"></button>
+      <button class="origin-btn bl" onclick="window.setOrigin('BL', this)" title="Bottom Left"></button>
+      <button class="origin-btn br" onclick="window.setOrigin('BR', this)" title="Bottom Right"></button>
+    </div>
+
+    <div class="sidebar-btn-grid">
+      <button class="btn-check" id="btn-check-work">CHECK WORK</button>
+      <button class="btn-resume" id="btn-resume-job">RESUME</button>
+    </div>
+  </div>
+
+  <div class="nav-section-label">TOOLING</div>
+  <div class="sidebar-tooling">
+    <div class="current-tool-display">
+      <span class="tool-label">Active:</span>
+      <span class="tool-name" id="active-tool-name">6mm Endmill</span>
+    </div>
+    <select id="tool-selector" class="tool-dropdown">
+      <optgroup label="END MILLS (Dia)">
+        <option value="em3">3mm Endmill</option>
+        <option value="em4">4mm Endmill</option>
+        <option value="em6" selected>6mm Endmill</option>
+        <option value="em8">8mm Endmill</option>
+        <option value="em10">10mm Endmill</option>
+        <option value="em12">12mm Endmill</option>
+      </optgroup>
+      <optgroup label="BALL NOSE (Dia)">
+        <option value="bn3">3mm Ballnose</option>
+        <option value="bn4">4mm Ballnose</option>
+        <option value="bn6">6mm Ballnose</option>
+        <option value="bn8">8mm Ballnose</option>
+        <option value="bn10">10mm Ballnose</option>
+        <option value="bn12">12mm Ballnose</option>
+      </optgroup>
+      <optgroup label="TAPER BALL NOSE (25mm Taper)">
+        <option value="tbn1">1mm Taper Ballnose</option>
+        <option value="tbn1.5">1.5mm Taper Ballnose</option>
+        <option value="tbn2">2mm Taper Ballnose</option>
+        <option value="tbn3">3mm Taper Ballnose</option>
+        <option value="tbn4">4mm Taper Ballnose</option>
+        <option value="tbn6">6mm Taper Ballnose</option>
+      </optgroup>
+      <optgroup label="OTHERS">
+        <option value="v90">90° V-Bit (12.7mm)</option>
+        <option value="v60">60° V-Bit (6mm)</option>
+        <option value="surf25">25mm Surfacing</option>
+      </optgroup>
+    </select>
+    <button class="btn-mount" id="btn-mount">MOUNT</button>
+  </div>
+
+  <div class="nav-section-label">CONTROL</div>
+  <ul class="nav-links">
+    <li class="nav-item active" data-page="dashboard">
+      <span class="nav-icon">◎</span><span>Machine Control</span>
+    </li>
+  </ul>
+
+  <div class="sidebar-status">
+    <div class="status-dot online"></div>
+    <span>System Online</span>
+    <span class="mono">v4.2.1</span>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="main-content" id="mainContent">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger" id="hamburger">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="breadcrumb">
+        <span class="mono">CNC/</span><span id="breadcrumbText">SIMULATOR</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-top-start" id="sidebar-start-btn">
+        <span class="icon">▶</span> START
+      </button>
+      <button class="btn-top-stop" id="sidebar-shutdown-btn">
+        <span class="icon">⏻</span> STOP
+      </button>
+      <div class="clock" id="clock"></div>
+      <div class="avatar">DE</div>
+    </div>
+  </header>
+
+  <!-- PAGES -->
+  <div class="pages-container">
+
+    <!-- DASHBOARD PAGE -->
+    <div class="page active" id="page-dashboard">
+      <div class="simulator-layout">
+
+        <!-- 3D SIMULATOR (LEFT) -->
+        <div class="glass-card sim-main-card">
+          <div class="card-header">
+            <div class="header-left">
+                <span class="card-title">CNC ROUTER SYSTEM — CNC CONTROL ROOM</span>
+                <span class="machine-status">● ONLINE</span>
+            </div>
+            <div class="header-right">
+                <div class="remote-lcd-inline">
+                    <div class="lcd-axis">X <span id="lcd-x">0.000</span></div>
+                    <div class="lcd-axis">Y <span id="lcd-y">0.000</span></div>
+                    <div class="lcd-axis">Z <span id="lcd-z">0.000</span></div>
+                </div>
+                <input type="file" id="gcode-upload" style="display:none" accept=".nc,.gcode,.txt">
+                <button class="btn-new-job" onclick="document.getElementById('gcode-upload').click()">
+                    <span>↑</span> LOAD G-CODE
+                </button>
+            </div>
+          </div>
+
+          <div id="cnc-canvas-container" style="position:relative; flex:1;">
+            <div class="sim-speed-controls">
+                <button class="btn-speed" id="btn-speed-down" title="Slow Down">🐢 -</button>
+                <div class="speed-label"><span id="speed-multiplier">100</span>%</div>
+                <button class="btn-speed" id="btn-speed-up" title="Speed Up">🐇 +</button>
+            </div>
+          </div>
+
+          <div class="canvas-footer-stats">
+            <div class="stat-item">FEED: <b id="stat-feed">15000 (100%)</b> mm/min</div>
+            <div class="stat-item">STEP: <b id="stat-step">0.100</b> mm</div>
+            <div class="stat-item">JOG: <b id="stat-mode">JOG</b></div>
+            <div class="stat-item">SHIFT: <b id="stat-shift">OFF</b></div>
+            <div class="stat-item">FILE: <b id="loaded-filename">NONE</b></div>
+            <div class="progress-container">
+                <div class="progress-bar-bg"><div id="job-progress" class="progress-bar-fill"></div></div>
+                <span id="progress-text">0%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- NK105 G2 REMOTE (RIGHT) -->
+        <div class="remote-sidebar">
+          <div class="nk105-pendant-real">
+            <div class="pendant-header">
+              <div class="brand">NK105 <span class="g2">G2</span></div>
+              <div class="leds">
+                <div class="led-unit"><span>comm</span><div class="led-light green" id="led-comm"></div></div>
+                <div class="led-unit"><span>power</span><div class="led-light red on" id="led-power"></div></div>
+              </div>
+            </div>
+
+            <!-- REMOTE LCD DISPLAY -->
+            <div class="pendant-lcd" id="remote-lcd">
+              <div id="lcd-main-screen">
+                <div class="lcd-coords">
+                  <div class="lcd-axis-row">
+                    <div class="lcd-axis-item"><span class="axis-letter">X:</span><span class="axis-num" id="rem-x">0.000</span></div>
+                    <div class="lcd-axis-item"><span class="axis-letter">Y:</span><span class="axis-num" id="rem-y">0.000</span></div>
+                    <div class="lcd-axis-item"><span class="axis-letter">Z:</span><span class="axis-num" id="rem-z">0.000</span></div>
+                  </div>
+                </div>
+                <div class="lcd-row">
+                  <div class="lcd-label">FEED:</div>
+                  <div class="lcd-val" id="rem-feed">15000</div>
+                </div>
+                <div class="lcd-row">
+                  <div class="lcd-label">LINE:</div>
+                  <div class="lcd-val" id="rem-line">0 / 0</div>
+                </div>
+                <div class="lcd-row">
+                  <div class="lcd-label">COORD:</div>
+                  <div class="lcd-val" id="rem-coord">1-G54</div>
+                </div>
+                <div class="lcd-row">
+                  <div class="lcd-label">GEAR:</div>
+                  <div class="lcd-val" id="rem-gear">S:1</div>
+                </div>
+                <div class="lcd-row">
+                  <div class="lcd-label">RPM:</div>
+                  <div class="lcd-val" id="rem-rpm">0</div>
+                </div>
+              </div>
+              <!-- Startup Message Overlay -->
+              <div id="lcd-startup-msg" style="display:none; height:100%; flex-direction:column; justify-content:center; align-items:center; text-align:center; font-family:'Share Tech Mono', monospace;">
+                <div id="startup-text-top" style="color:#00ffc8; margin-bottom:10px;"></div>
+                <div id="startup-text-bot" style="color:#fff; font-size:1.2em;"></div>
+              </div>
+
+              <div class="lcd-footer">
+                <div class="lcd-mode-tag" id="rem-mode">OFFLINE</div>
+                <div class="lcd-mode-tag" id="rem-step-val" style="display:none">0.1</div>
+              </div>
+            </div>
+
+            <div class="pendant-grid">
+              <!-- Row 1 -->
+              <div class="p-key blue" id="key-7">
+                <div class="main-label">〰+</div>
+                <div class="sub-icon-left">⚙+</div>
+                <div class="sub-num">7</div>
+              </div>
+              <div class="p-key yellow" id="key-8">
+                <div class="main-label">Y+</div>
+                <div class="sub-icon-left">🔳</div>
+                <div class="sub-num">8</div>
+              </div>
+              <div class="p-key yellow" id="key-9">
+                <div class="main-label">Z+</div>
+                <div class="sub-num">9</div>
+              </div>
+
+              <!-- Row 2 -->
+              <div class="p-key yellow" id="key-4">
+                <div class="main-label">X-</div>
+                <div class="sub-icon-left">🎯</div>
+                <div class="sub-num">4</div>
+              </div>
+              <div class="p-key blue" id="key-5">
+                <div class="main-label">🌀</div>
+                <div class="sub-icon-left">🏠</div>
+                <div class="sub-num">5</div>
+              </div>
+              <div class="p-key yellow" id="key-6">
+                <div class="main-label">X+</div>
+                <div class="sub-num">6</div>
+              </div>
+
+              <!-- Row 3 -->
+              <div class="p-key blue" id="key-1">
+                <div class="main-label">〰-</div>
+                <div class="sub-icon-left">⚙-</div>
+                <div class="sub-num">1</div>
+              </div>
+              <div class="p-key yellow" id="key-2">
+                <div class="main-label">Y-</div>
+                <div class="sub-icon-left"></div>
+                <div class="sub-num">2</div>
+              </div>
+              <div class="p-key yellow" id="key-3">
+                <div class="main-label">Z-</div>
+                <div class="sub-num">3</div>
+              </div>
+
+              <!-- Row 4 -->
+              <div class="p-key yellow" id="key-0">
+                <div class="main-label">〰</div>
+                <div class="sub-icon-left">📏</div>
+                <div class="sub-num">0</div>
+              </div>
+              <div class="p-key white" id="key-clear">
+                <div class="main-label">XY=0</div>
+                <div class="sub-icon-left">Z=0</div>
+                <div class="sub-num">-</div>
+              </div>
+              <div class="p-key white" id="key-menu">
+                <div class="main-label">≣</div>
+                <div class="sub-icon-left">❓</div>
+                <div class="sub-num">.</div>
+              </div>
+
+              <!-- Row 5 -->
+              <div class="p-key green" id="key-run">
+                <div class="main-icon">▶</div>
+                <div class="sub-icon-left">⏯</div>
+              </div>
+              <div class="p-key white" id="key-pause">
+                <div class="main-icon">⏸</div>
+                <div class="sub-icon-bottom">↑</div>
+              </div>
+              <div class="p-key red" id="key-stop">
+                <div class="main-icon">■</div>
+                <div class="sub-text-bottom">ESC</div>
+              </div>
+
+              <!-- Row 6 -->
+              <div class="p-key white" id="key-shift">
+                <div class="center-text">Shift</div>
+              </div>
+              <div class="p-key white" id="key-down">
+                <div class="main-icon">↓</div>
+              </div>
+              <div class="p-key white" id="key-ok">
+                <div class="center-text">OK</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OTHER PAGES PLACEHOLDERS -->
+    <div class="page" id="page-jobs">
+       <div class="page-header"><h1 class="page-title">Job <span class="highlight">Queue</span></h1></div>
+       <div class="glass-card" style="padding:40px; text-align:center;">Job Queue System Offline</div>
+    </div>
+    <div class="page" id="page-machines">
+       <div class="page-header"><h1 class="page-title">Machine <span class="highlight">Control</span></h1></div>
+       <div class="glass-card" style="padding:40px; text-align:center;">Machine Management Offline</div>
+    </div>
+    <div class="page" id="page-materials">
+       <div class="page-header"><h1 class="page-title">Material <span class="highlight">Inventory</span></h1></div>
+       <div class="glass-card" style="padding:40px; text-align:center;">Inventory System Offline</div>
+    </div>
+    <div class="page" id="page-gcode">
+       <div class="page-header"><h1 class="page-title">G-Code <span class="highlight">Editor</span></h1></div>
+       <div class="glass-card" style="padding:40px; text-align:center;">Editor System Offline</div>
+    </div>
+    <div class="page" id="page-reports">
+       <div class="page-header"><h1 class="page-title">Production <span class="highlight">Reports</span></h1></div>
+       <div class="glass-card" style="padding:40px; text-align:center;">Reporting System Offline</div>
+    </div>
+    <div class="page" id="page-settings">
+       <div class="page-header"><h1 class="page-title">System <span class="highlight">Settings</span></h1></div>
+       <div class="glass-card" style="padding:40px; text-align:center;">Settings System Offline</div>
+    </div>
+
+  </div>
+</main>
+
+<script src="app.js"></script>
+<script src="remote.js"></script>
+</body>
+</html>
