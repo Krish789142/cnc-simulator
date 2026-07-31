@@ -77,79 +77,81 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- OK BUTTON (FOR STEP SETTING & CONFIRMATION) ---
-    document.getElementById('key-ok')?.addEventListener('click', (e) => {
-        if (window.machineState === 'OFF') return;
+    const okBtn = document.getElementById('key-ok');
+    if (okBtn) {
+        okBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (window.machineState === 'OFF') return;
 
-        console.log("OK Clicked. Current isWaitingForHome:", isWaitingForHome);
+            // CASE 1: Confirming Homing during Boot
+            if (isWaitingForHome === true) {
+                isWaitingForHome = false;
+                window.isHomed = false;
 
-        // CASE 1: Confirming Homing during Boot
-        if (isWaitingForHome === true) {
-            isWaitingForHome = false;
-            window.isHomed = false;
+                const lcd = document.getElementById('remote-lcd');
+                const main = document.getElementById('lcd-main-screen');
+                const msg = document.getElementById('lcd-startup-msg');
 
-            const lcd = document.getElementById('remote-lcd');
-            const main = document.getElementById('lcd-main-screen');
-            const msg = document.getElementById('lcd-startup-msg');
+                if (lcd && main && msg) {
+                    main.style.display = 'block';
+                    msg.style.display = 'none';
+                    lcd.style.background = "";
+                }
 
-            if (lcd && main && msg) {
-                main.style.display = 'block';
-                msg.style.display = 'none';
-                lcd.style.background = "";
+                const modeTag = document.getElementById('rem-mode');
+                if (modeTag) modeTag.textContent = window.jogStep ? "STEP" : "JOG";
+
+                showRemoteMsg("HOMING...", "LIFTING Z...");
+
+                // 1. Lift Z to safe height first
+                window.targetPos.z = 200;
+                window.machineState = 'HOMING';
+
+                const checkZ = setInterval(() => {
+                    if (Math.abs(window.toolPos.z - 200) < 1) {
+                        clearInterval(checkZ);
+                        window.targetPos.x = 1397;
+                        window.targetPos.y = 0;
+                        window.machineState = 'HOMING';
+                        showRemoteMsg("HOMING...", "MOVING TO HOME");
+                    }
+                }, 100);
+                return;
             }
 
-            const modeTag = document.getElementById('rem-mode');
-            if (modeTag) modeTag.textContent = window.jogStep ? "STEP" : "JOG";
-
-            showRemoteMsg("HOMING...", "LIFTING Z...");
-
-            // 1. Lift Z to safe height first
-            window.targetPos.z = 200;
-            window.machineState = 'HOMING';
-
-            const checkZ = setInterval(() => {
-                if (Math.abs(window.toolPos.z - 200) < 1) {
-                    clearInterval(checkZ);
-                    window.targetPos.x = 1397;
-                    window.targetPos.y = 0;
-                    window.machineState = 'HOMING';
-                    showRemoteMsg("HOMING...", "MOVING TO HOME");
-                }
-            }, 100);
-            return;
-        }
-
-        // CASE 2: Machine is READY and already HOMED (Set Step)
-        if (window.machineState === 'READY' && window.isHomed === true) {
-            if (!isSettingStep) {
-                isSettingStep = true;
-                stepInputBuffer = "";
-                showRemoteMsg("SET STEP DIST", "ENTER & PRESS OK");
-            } else {
-                let val = parseFloat(stepInputBuffer);
-                if (!isNaN(val) && val > 0) {
-                    window.stepValue = val;
-                    showRemoteMsg("STEP VALUE SET", val.toFixed(3) + " mm");
-
-                    const stepTag = document.getElementById('rem-step-val');
-                    if(stepTag) {
-                        stepTag.textContent = val.toFixed(3);
-                        if(window.jogStep) stepTag.style.display = 'block';
-                    }
+            // CASE 2: Machine is READY and already HOMED (Set Step)
+            if (window.machineState === 'READY' && window.isHomed === true) {
+                if (!isSettingStep) {
+                    isSettingStep = true;
+                    stepInputBuffer = "";
+                    showRemoteMsg("SET STEP DIST", "ENTER & PRESS OK");
                 } else {
-                    showRemoteMsg("INVALID VALUE", "KEEP OLD STEP");
+                    let val = parseFloat(stepInputBuffer);
+                    if (!isNaN(val) && val > 0) {
+                        window.stepValue = val;
+                        showRemoteMsg("STEP VALUE SET", val.toFixed(3) + " mm");
+
+                        const stepTag = document.getElementById('rem-step-val');
+                        if(stepTag) {
+                            stepTag.textContent = val.toFixed(3);
+                            if(window.jogStep) stepTag.style.display = 'block';
+                        }
+                    } else {
+                        showRemoteMsg("INVALID VALUE", "KEEP OLD STEP");
+                    }
+                    isSettingStep = false;
+                    setTimeout(hideRemoteMsg, 1500);
                 }
-                isSettingStep = false;
+                return;
+            }
+
+            // CASE 3: Guard
+            if (!window.isHomed && window.machineState !== 'HOMING' && window.machineState !== 'BOOTING') {
+                showRemoteMsg("ERROR", "HOME MACHINE FIRST");
                 setTimeout(hideRemoteMsg, 1500);
             }
-            return;
-        }
-
-        // CASE 3: Guard
-        if (!window.isHomed && window.machineState !== 'HOMING' && window.machineState !== 'BOOTING') {
-            showRemoteMsg("ERROR", "HOME MACHINE FIRST");
-            setTimeout(hideRemoteMsg, 1500);
-        }
-    });
+        });
+    }
 
     // --- SPINDLE TOGGLE (KEY 5) & GO TO ORIGIN (SHIFT + 5) ---
     document.getElementById('key-5')?.addEventListener('click', () => {
