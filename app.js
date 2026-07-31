@@ -730,18 +730,7 @@ function animate() {
                 window.toolPos.z = window.targetPos.z;
 
                 if (window.machineState === 'HOMING') {
-                    // Check if we are at the ACTUAL home position (X:1397, Y:0, Z:200)
-                    if (Math.abs(window.toolPos.x - 1397) < 1 && Math.abs(window.toolPos.y - 0) < 1 && Math.abs(window.toolPos.z - 200) < 1) {
-                        window.machineState = 'READY';
-                        window.isHomed = true;
-                        if (typeof showRemoteMsg === 'function') {
-                            showRemoteMsg("HOMING OK", "MACHINE READY");
-                            setTimeout(hideRemoteMsg, 1500);
-                        }
-                    } else {
-                        // We reached a sub-target (like Z-up), just wait for next target or remain in HOMING
-                        // Don't set READY yet
-                    }
+                    // Logic handled by remote.js intervals now
                     moveBudget = 0;
                 } else if (window.isSimulating && !window.isPaused) {
                     // Draw path segment before moving to next line

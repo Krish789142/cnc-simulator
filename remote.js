@@ -102,21 +102,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 const modeTag = document.getElementById('rem-mode');
                 if (modeTag) modeTag.textContent = window.jogStep ? "STEP" : "JOG";
 
-                showRemoteMsg("HOMING...", "LIFTING Z...");
+                            showRemoteMsg("HOMING...", "LIFTING Z...");
 
-                window.targetPos.z = 200;
-                window.machineState = 'HOMING';
+            // 1. Lift Z to safe height first
+            window.targetPos.z = 200;
+            window.machineState = 'HOMING';
 
-                const checkZ = setInterval(() => {
-                    if (Math.abs(window.toolPos.z - 200) < 1) {
-                        clearInterval(checkZ);
-                        window.targetPos.x = 1397;
-                        window.targetPos.y = 0;
-                        window.machineState = 'HOMING';
-                        showRemoteMsg("HOMING...", "MOVING TO HOME");
-                    }
-                }, 100);
-                return;
+            const checkZ = setInterval(() => {
+                if (Math.abs(window.toolPos.z - 200) < 0.5) {
+                    clearInterval(checkZ);
+
+                    // 2. Move XY to home
+                    window.targetPos.x = 1397;
+                    window.targetPos.y = 0;
+                    window.machineState = 'HOMING';
+                    showRemoteMsg("HOMING...", "MOVING TO HOME");
+
+                    const checkXY = setInterval(() => {
+                        if (Math.abs(window.toolPos.x - 1397) < 0.5 && Math.abs(window.toolPos.y - 0) < 0.5) {
+                            clearInterval(checkXY);
+                            window.machineState = 'READY';
+                            window.isHomed = true;
+                            showRemoteMsg("HOMING OK", "MACHINE READY");
+
+                            // Update LCD Mode
+                            const modeTag = document.getElementById('rem-mode');
+                            if (modeTag) modeTag.textContent = window.jogStep ? "STEP" : "JOG";
+
+                            setTimeout(hideRemoteMsg, 1500);
+                        }
+                    }, 50);
+                }
+            }, 50);
+            return;
             }
 
             // CASE 2: Step Distance Setting (ONLY when READY and HOMED)
