@@ -303,43 +303,48 @@ document.addEventListener('DOMContentLoaded', () => {
         b.addEventListener('touchstart', startJog); b.addEventListener('touchend', stopJog);
     });
 
-    // --- SHIFT TOGGLE (SWITCH BETWEEN JOG AND STEP MODE) ---
+    // --- SHIFT BUTTON (MOMENTARY) ---
     const shiftBtn = document.getElementById('key-shift');
-    shiftBtn?.addEventListener('click', () => {
-        if (window.machineState === 'OFF' || window.isSimulating || isSettingStep) return;
+    if (shiftBtn) {
+        const setShift = (val) => {
+            if (window.machineState === 'OFF' || window.isSimulating || isSettingStep) return;
+            window.isShiftPressed = val;
 
-        // Toggle Jog/Step mode
-        window.jogStep = !window.jogStep;
-        window.isShiftPressed = window.jogStep; // Keep in sync for other functions
+            // Update Button Style
+            shiftBtn.style.background = val ? "#ffae00" : "";
+            shiftBtn.style.color = val ? "#000" : "";
 
-        // Update Button Style
-        shiftBtn.style.background = window.jogStep ? "#ffae00" : "";
-        shiftBtn.style.color = window.jogStep ? "#000" : "";
-
-        // Update LCD Display
-        const modeTag = document.getElementById('rem-mode');
-        const stepTag = document.getElementById('rem-step-val');
-
-        if (window.jogStep) {
-            if (modeTag) modeTag.textContent = "STEP";
-            if (stepTag) {
-                stepTag.textContent = (window.stepValue || 0.1).toFixed(3);
-                stepTag.style.display = 'block';
+            // Update LCD Mode Tag
+            const modeTag = document.getElementById('rem-mode');
+            if (modeTag) {
+                if (val) {
+                    modeTag.textContent = "STEP";
+                    const stepTag = document.getElementById('rem-step-val');
+                    if (stepTag) {
+                        stepTag.textContent = (window.stepValue || 0.1).toFixed(3);
+                        stepTag.style.display = 'block';
+                    }
+                    window.jogStep = true;
+                } else {
+                    modeTag.textContent = "JOG";
+                    const stepTag = document.getElementById('rem-step-val');
+                    if (stepTag) stepTag.style.display = 'none';
+                    window.jogStep = false;
+                }
             }
-            showRemoteMsg("MODE: STEP", "DIST: " + (window.stepValue || 0.1) + "mm");
-        } else {
-            if (modeTag) modeTag.textContent = "JOG";
-            if (stepTag) stepTag.style.display = 'none';
-            showRemoteMsg("MODE: JOG", "CONTINUOUS");
-        }
+        };
 
-        setTimeout(hideRemoteMsg, 1000);
-    });
+        shiftBtn.addEventListener('mousedown', () => setShift(true));
+        shiftBtn.addEventListener('mouseup', () => setShift(false));
+        shiftBtn.addEventListener('mouseleave', () => setShift(false));
+        shiftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); setShift(true); }, { passive: false });
+        shiftBtn.addEventListener('touchend', (e) => { e.preventDefault(); setShift(false); }, { passive: false });
+    }
 
     // --- ZERO SETTING (CLEAR) ---
     document.getElementById('key-clear')?.addEventListener('click', () => {
         if (window.machineState === 'OFF' || window.isSimulating || isSettingStep) return;
-        if(window.jogStep) { window.workOffset.z = window.toolPos.z; showRemoteMsg("Z AXIS", "ZERO SET"); }
+        if(window.isShiftPressed) { window.workOffset.z = window.toolPos.z; showRemoteMsg("Z AXIS", "ZERO SET"); }
         else { window.workOffset.x = window.toolPos.x; window.workOffset.y = window.toolPos.y; showRemoteMsg("XY AXIS", "ZERO SET"); }
         setTimeout(hideRemoteMsg, 1500);
     });
@@ -455,7 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (window.machineState === 'OFF' || isSettingStep) return;
 
             // 0 -> Speed Toggle
-            if (k === '0' && !window.jogStep) {
+            if (k === '0' && !window.isShiftPressed) {
                 if (window.feedOverride > 80) {
                     window.feedOverride = 60;
                     showRemoteMsg("MODE: SLOW (S)", "FEED 15000");
@@ -467,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(hideRemoteMsg, 1500);
             }
             // 5 -> Spindle Toggle
-            else if (k === '5' && !window.jogStep) {
+            else if (k === '5' && !window.isShiftPressed) {
                 window.spindleOn = !window.spindleOn;
                 if (window.spindleOn) {
                     if (window.targetRPM === 0) window.targetRPM = 18000;
@@ -480,8 +485,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateGearDisplay();
                 setTimeout(hideRemoteMsg, 1500);
             }
-            // 7/1 -> Gear Override
-            else if (k === '7' && window.jogStep) {
+            // 7/1 -> Gear Override (When Shift/Step is Active)
+            else if (k === '7' && window.isShiftPressed) {
                 const gears = [6000, 9000, 12000, 15000, 18000, 21000, 24000];
                 let idx = gears.indexOf(window.targetRPM);
                 if (idx < gears.length - 1) {
@@ -491,7 +496,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showRemoteMsg("SPINDLE GEAR", window.targetRPM + " RPM");
                 updateGearDisplay(); setTimeout(hideRemoteMsg, 1000);
             }
-            else if (k === '1' && window.jogStep) {
+            else if (k === '1' && window.isShiftPressed) {
                 const gears = [6000, 9000, 12000, 15000, 18000, 21000, 24000];
                 let idx = gears.indexOf(window.targetRPM);
                 if (idx > 0) {
