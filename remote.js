@@ -354,12 +354,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // SPEED TOGGLE (KEY 0 - ABOVE GREEN BUTTON)
             if (k === '0' && !window.isShiftPressed) {
-                if (window.feedOverride > 50) {
-                    window.feedOverride = 10;
-                    showRemoteMsg("SPEED: SLOW", "FEED 10%");
+                if (window.feedOverride > 75) {
+                    window.feedOverride = 50;
+                    showRemoteMsg("SPEED: HALF", "FEED 50%");
                 } else {
                     window.feedOverride = 100;
-                    showRemoteMsg("SPEED: HIGH", "FEED 100%");
+                    showRemoteMsg("SPEED: MAX", "FEED 100%");
                 }
                 updateGearDisplay();
                 setTimeout(hideRemoteMsg, 1500);
