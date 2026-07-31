@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showRemoteMsg("POWER OFF", "SYSTEM SHUTDOWN");
     });
 
-    // --- OK BUTTON (FOR CONFIRMATION) ---
+    // --- OK BUTTON (FOR STEP SETTING & CONFIRMATION) ---
     document.getElementById('key-ok')?.addEventListener('click', () => {
         if (isWaitingForHome) {
             isWaitingForHome = false;
@@ -77,7 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const checkZ = setInterval(() => {
                 if (Math.abs(window.toolPos.z - 200) < 1) {
                     clearInterval(checkZ);
-                    // Move to Machine Zero (Home) - Front-Left (X:1397, Y:0)
                     window.targetPos.x = 1397;
                     window.targetPos.y = 0;
                     window.machineState = 'HOMING';
@@ -85,6 +84,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     showRemoteMsg("HOMING...", "MOVING TO HOME");
                 }
             }, 100);
+        } else {
+            // STEP SETTING LOGIC
+            if (!isSettingStep) {
+                isSettingStep = true;
+                stepInputBuffer = "";
+                showRemoteMsg("SET STEP DIST", "ENTER & PRESS OK");
+            } else {
+                let val = parseFloat(stepInputBuffer);
+                if (!isNaN(val) && val > 0) {
+                    window.stepValue = val;
+                    window.jogStep = true;
+                    showRemoteMsg("STEP MODE: ON", "STEP: " + val.toFixed(3) + "mm");
+
+                    const stepTag = document.getElementById('rem-step-val');
+                    if(stepTag) { stepTag.textContent = val.toFixed(3); stepTag.style.display = 'block'; }
+                    const modeTag = document.getElementById('rem-mode');
+                    if(modeTag) modeTag.textContent = "STEP";
+                } else {
+                    window.jogStep = false;
+                    showRemoteMsg("STEP MODE: OFF", "CONTINUOUS");
+                    const modeTag = document.getElementById('rem-mode');
+                    if(modeTag) modeTag.textContent = "JOG";
+                    const stepTag = document.getElementById('rem-step-val');
+                    if(stepTag) stepTag.style.display = 'none';
+                }
+                isSettingStep = false;
+                setTimeout(hideRemoteMsg, 1500);
+            }
         }
     });
 
@@ -161,7 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const speedMult = window.isShiftPressed ? 2.5 : 1.0;
+            const speedMult = 1.0; // Speed override handled by '0' key now
 
             if (window.jogStep && window.stepValue > 0) {
                 // STEP MOVEMENT
@@ -173,8 +200,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (k === 'key-9') window.targetPos.z = Math.min(200, window.toolPos.z + step);
                 if (k === 'key-3') window.targetPos.z = Math.max(0, window.toolPos.z - step);
 
-                window.machineState = 'AUTO'; // Trigger smooth movement to target
-                setTimeout(() => { if(window.machineState === 'AUTO') window.machineState = 'READY'; }, 500);
+                window.machineState = 'AUTO';
+                // Keep target updated to prevent jumping
+                setTimeout(() => { if(window.machineState === 'AUTO') window.machineState = 'READY'; }, 200);
             } else {
                 // CONTINUOUS MOVEMENT
                 window.activeJogKeys.add(k);
@@ -189,37 +217,36 @@ document.addEventListener('DOMContentLoaded', () => {
         b.addEventListener('touchstart', startJog); b.addEventListener('touchend', stopJog);
     });
 
-    // --- MODE / STEP SETTING ---
-    document.getElementById('key-mode')?.addEventListener('click', () => {
-        if (window.machineState === 'OFF') return;
-        if (window.isSimulating) { showRemoteMsg("LOCKED", "AUTO MODE RUNNING"); setTimeout(hideRemoteMsg, 1500); return; }
-
-        if (!isSettingStep) {
-            isSettingStep = true;
-            stepInputBuffer = "";
-            showRemoteMsg("SET JOG MODE", "1:CONT  2:STEP");
-        } else {
-            if (stepInputBuffer === "1") {
-                window.jogStep = false;
-                showRemoteMsg("JOG MODE", "CONTINUOUS");
-            } else {
-                let val = parseFloat(stepInputBuffer) || 1.0;
-                window.stepValue = val;
-                window.jogStep = true;
-                showRemoteMsg("STEP SET", val.toFixed(3) + " mm");
-            }
-            isSettingStep = false;
-            setTimeout(hideRemoteMsg, 1500);
-        }
-    });
-
-    // --- SHIFT TOGGLE ---
+    // --- SHIFT TOGGLE (SWITCH BETWEEN JOG AND STEP MODE) ---
     const shiftBtn = document.getElementById('key-shift');
     shiftBtn?.addEventListener('click', () => {
-        window.isShiftPressed = !window.isShiftPressed;
-        shiftBtn.style.background = window.isShiftPressed ? "#ffae00" : "";
-        shiftBtn.style.color = window.isShiftPressed ? "#000" : "";
-        showRemoteMsg(window.isShiftPressed ? "SHIFT ON" : "SHIFT OFF", "");
+        if (window.machineState === 'OFF' || window.isSimulating) return;
+
+        // Toggle Jog/Step mode
+        window.jogStep = !window.jogStep;
+        window.isShiftPressed = window.jogStep; // Keep in sync for other functions
+
+        // Update Button Style
+        shiftBtn.style.background = window.jogStep ? "#ffae00" : "";
+        shiftBtn.style.color = window.jogStep ? "#000" : "";
+
+        // Update LCD Display
+        const modeTag = document.getElementById('rem-mode');
+        const stepTag = document.getElementById('rem-step-val');
+
+        if (window.jogStep) {
+            if (modeTag) modeTag.textContent = "STEP";
+            if (stepTag) {
+                stepTag.textContent = (window.stepValue || 0.1).toFixed(3);
+                stepTag.style.display = 'block';
+            }
+            showRemoteMsg("MODE: STEP", "DIST: " + (window.stepValue || 0.1) + "mm");
+        } else {
+            if (modeTag) modeTag.textContent = "JOG";
+            if (stepTag) stepTag.style.display = 'none';
+            showRemoteMsg("MODE: JOG", "CONTINUOUS");
+        }
+
         setTimeout(hideRemoteMsg, 1000);
     });
 
@@ -312,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else { window.currentLineIndex = 0; showRemoteMsg("RESET", "LINE 0"); setTimeout(hideRemoteMsg, 1500); }
     });
 
-    // --- NUMERIC KEYS (GEAR & PROBE) ---
+    // --- NUMERIC KEYS (GEAR, PROBE & SPEED TOGGLE) ---
     ['0','1','2','3','4','5','6','7','8','9','clear'].forEach(k => {
         document.getElementById('key-'+k)?.addEventListener('click', () => {
             if (window.machineState === 'OFF') return;
@@ -321,7 +348,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 const val = (k === 'clear') ? '.' : k;
                 if (val === '.' && stepInputBuffer.includes('.')) return;
                 stepInputBuffer += val;
-                showRemoteMsg("STEP UNIT SET", "VALUE: " + stepInputBuffer);
+                showRemoteMsg("STEP DISTANCE", "VALUE: " + stepInputBuffer);
+                return;
+            }
+
+            // SPEED TOGGLE (KEY 0 - ABOVE GREEN BUTTON)
+            if (k === '0' && !window.isShiftPressed) {
+                if (window.feedOverride > 50) {
+                    window.feedOverride = 10;
+                    showRemoteMsg("SPEED: SLOW", "FEED 10%");
+                } else {
+                    window.feedOverride = 100;
+                    showRemoteMsg("SPEED: HIGH", "FEED 100%");
+                }
+                updateGearDisplay();
+                setTimeout(hideRemoteMsg, 1500);
                 return;
             }
 
