@@ -527,7 +527,7 @@ body::before {
   grid-template-columns: 1fr 230px; /* Canvas on left, Remote on right */
   gap: 20px;
   height: calc(100vh - 130px);
-  min-height: 500px;
+  min-height: 600px; /* Increased to fit remote */
   padding-bottom: 20px;
 }
 
@@ -615,8 +615,8 @@ body::before {
 
 .nk105-pendant-real {
   width: 210px;
-  min-height: 480px; /* Fixed vertical size */
-  flex-shrink: 0;   /* Don't let it shrink */
+  min-height: 550px; /* Increased to fit all buttons */
+  flex-shrink: 0;
   background: #3c464e;
   border-radius: 15px;
   padding: 10px;
