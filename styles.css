@@ -430,10 +430,10 @@ body::before {
 /* ===== SIMULATOR LAYOUT ===== */
 .simulator-layout {
   display: grid;
-  grid-template-columns: 1fr 240px; /* Badi sidebar for remote */
-  gap: 20px;
-  min-height: 750px;
-  padding-bottom: 40px;
+  grid-template-columns: 1fr 220px; /* Thoda kam sidebar space */
+  gap: 15px;
+  min-height: 600px;
+  padding-bottom: 20px;
 }
 
 .sim-main-card {
@@ -535,13 +535,13 @@ body::before {
 }
 
 .nk105-pendant-real {
-  width: 230px;
-  min-height: 680px; /* Bada height taaki sab fit ho */
+  width: 210px;
+  min-height: 560px; /* Compact but fits everything */
   background: #3c464e;
-  border-radius: 18px;
-  padding: 15px;
-  border: 4px solid #1a1a1a;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.7), inset 0 1px 4px rgba(255,255,255,0.1);
+  border-radius: 15px;
+  padding: 10px;
+  border: 3px solid #1a1a1a;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.6), inset 0 1px 3px rgba(255,255,255,0.1);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -552,28 +552,28 @@ body::before {
   justify-content: space-between;
   align-items: flex-end;
   border-bottom: 2px solid #fff;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   padding-bottom: 5px;
 }
-.brand { font-family: 'Orbitron', sans-serif; font-weight: 900; color: #fff; font-size: 16px; font-style: italic; }
+.brand { font-family: 'Orbitron', sans-serif; font-weight: 900; color: #fff; font-size: 14px; font-style: italic; }
 .brand .g2 { color: #f1c40f; }
 
-.leds { display: flex; gap: 10px; }
-.led-unit { display: flex; flex-direction: column; align-items: center; font-size: 8px; color: #ccc; }
-.led-light { width: 10px; height: 10px; border-radius: 50%; background: #111; margin-bottom: 2px; }
+.leds { display: flex; gap: 8px; }
+.led-unit { display: flex; flex-direction: column; align-items: center; font-size: 7px; color: #ccc; }
+.led-light { width: 8px; height: 8px; border-radius: 50%; background: #111; margin-bottom: 2px; }
 .led-light.on.red { background: #ff4444; box-shadow: 0 0 10px #ff4444; }
 .led-light.on.green { background: #00ff88; box-shadow: 0 0 10px #00ff88; }
 
 /* NK105 LCD DISPLAY - BIGGER & CLEARER */
 .pendant-lcd {
   background: #1a1c1e;
-  border: 3px solid #222;
+  border: 2px solid #222;
   border-radius: 6px;
-  padding: 12px;
-  margin-bottom: 15px;
+  padding: 8px;
+  margin-bottom: 10px;
   font-family: 'Share Tech Mono', monospace;
   box-shadow: inset 0 0 20px rgba(0,0,0,0.9);
-  height: 160px; /* Badi screen */
+  height: 150px; /* Thoda sa compact kiya 160 se */
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
