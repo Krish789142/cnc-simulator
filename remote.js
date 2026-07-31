@@ -410,7 +410,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('key-stop')?.addEventListener('click', () => {
-        if (window.machineState === 'OFF' || isSettingStep) return;
+        if (window.machineState === 'OFF') return;
+
+        // 1. ESC Function: Exit Step Distance Setting
+        if (isSettingStep) {
+            isSettingStep = false;
+            stepInputBuffer = "";
+            showRemoteMsg("CANCELLED", "INPUT ABORTED");
+            setTimeout(hideRemoteMsg, 1200);
+            return;
+        }
+
+        // 2. STOP Function: Abort Homing
         if (window.machineState === 'HOMING' || window.isHomingInProgress) {
             window.machineState = 'READY';
             window.isHomingInProgress = false;
@@ -421,11 +432,21 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(hideRemoteMsg, 2000);
             return;
         }
+
+        // 3. EMERGENCY STOP Function: Stop Simulation
         if (window.isSimulating) {
-            window.isSimulating = false; window.machineState = 'READY'; window.spindleOn = false;
+            window.isSimulating = false;
+            window.machineState = 'READY';
+            window.spindleOn = false;
             if (typeof stopSpindleSound === 'function') stopSpindleSound();
-            showRemoteMsg("EMERGENCY STOP", "PROGRAM ABORTED"); setTimeout(hideRemoteMsg, 2000);
-        } else { window.currentLineIndex = 0; showRemoteMsg("RESET", "LINE 0"); setTimeout(hideRemoteMsg, 1500); }
+            showRemoteMsg("EMERGENCY STOP", "PROGRAM ABORTED");
+            setTimeout(hideRemoteMsg, 2000);
+        } else {
+            // 4. RESET Function: Reset Program index
+            window.currentLineIndex = 0;
+            showRemoteMsg("RESET", "LINE 0");
+            setTimeout(hideRemoteMsg, 1500);
+        }
     });
 
     // --- MASTER NUMERIC KEY HANDLER ---
