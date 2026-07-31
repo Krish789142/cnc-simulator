@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (remRPM) remRPM.textContent = window.spindleOn ? Math.round(window.targetRPM) : 0;
 
         const remFeed = document.getElementById('rem-feed');
-        if (remFeed) remFeed.textContent = Math.round((25000 / 1.2) * (window.feedOverride/100));
+        if (remFeed) remFeed.textContent = Math.round(25000 * (window.feedOverride/100));
     };
 
     // --- MACHINE POWER CONTROL (TOP BUTTONS) ---
@@ -354,12 +354,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // SPEED TOGGLE (KEY 0 - ABOVE GREEN BUTTON)
             if (k === '0' && !window.isShiftPressed) {
-                if (window.feedOverride > 75) {
-                    window.feedOverride = 50;
-                    showRemoteMsg("SPEED: HALF", "FEED 50%");
+                if (window.feedOverride > 80) {
+                    window.feedOverride = 60; // 60% of 25000 = 15000
+                    showRemoteMsg("SPEED: 15000", "FEED 60%");
                 } else {
-                    window.feedOverride = 100;
-                    showRemoteMsg("SPEED: MAX", "FEED 100%");
+                    window.feedOverride = 100; // 100% of 25000 = 25000
+                    showRemoteMsg("SPEED: 25000", "FEED 100%");
                 }
                 updateGearDisplay();
                 setTimeout(hideRemoteMsg, 1500);
