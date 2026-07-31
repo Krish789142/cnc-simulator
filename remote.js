@@ -85,8 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // CASE 1: Confirming Homing during Boot
         if (isWaitingForHome) {
             isWaitingForHome = false;
-            window.targetPos.z = 200; // Lift to safe height
-            window.machineState = 'HOMING';
+            window.isHomed = false;
 
             const lcd = document.getElementById('remote-lcd');
             const main = document.getElementById('lcd-main-screen');
@@ -103,12 +102,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             showRemoteMsg("HOMING...", "LIFTING Z...");
 
+            // 1. Lift Z to safe height first
+            window.targetPos.z = 200;
+            window.machineState = 'HOMING';
+
             const checkZ = setInterval(() => {
+                // If Z reached target, move XY to home
                 if (Math.abs(window.toolPos.z - 200) < 1) {
                     clearInterval(checkZ);
                     window.targetPos.x = 1397;
                     window.targetPos.y = 0;
-                    window.isHomingInProgress = true;
+                    window.machineState = 'HOMING'; // Ensure state is still HOMING
                     showRemoteMsg("HOMING...", "MOVING TO HOME");
                 }
             }, 100);
