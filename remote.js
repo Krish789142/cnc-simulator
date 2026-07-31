@@ -38,6 +38,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- MACHINE POWER CONTROL (TOP BUTTONS) ---
     document.getElementById('sidebar-start-btn')?.addEventListener('click', () => {
         if (window.machineState !== 'OFF') return;
+
+        window.machineState = 'BOOTING'; // Change state from OFF
+
         const lcd = document.getElementById('remote-lcd');
         const main = document.getElementById('lcd-main-screen');
         const msg = document.getElementById('lcd-startup-msg');
@@ -73,16 +76,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- OK BUTTON (FOR STEP SETTING & CONFIRMATION) ---
     document.getElementById('key-ok')?.addEventListener('click', () => {
+        // Allow OK if machine is booting (waiting for home) OR if it's already running
         if (window.machineState === 'OFF') return;
 
         if (isWaitingForHome) {
             isWaitingForHome = false;
             window.targetPos.z = 200; // Lift to safe height
             window.machineState = 'HOMING';
+
             const lcd = document.getElementById('remote-lcd');
             const main = document.getElementById('lcd-main-screen');
             const msg = document.getElementById('lcd-startup-msg');
-            if (lcd && main && msg) { main.style.display = 'block'; msg.style.display = 'none'; lcd.style.background = ""; }
+
+            if (lcd && main && msg) {
+                main.style.display = 'block';
+                msg.style.display = 'none';
+                lcd.style.background = "";
+            }
 
             const modeTag = document.getElementById('rem-mode');
             if (modeTag) modeTag.textContent = window.jogStep ? "STEP" : "JOG";
@@ -94,17 +104,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     clearInterval(checkZ);
                     window.targetPos.x = 1397;
                     window.targetPos.y = 0;
-                    window.machineState = 'HOMING';
                     window.isHomingInProgress = true;
                     showRemoteMsg("HOMING...", "MOVING TO HOME");
                 }
             }, 100);
-        } else {
-            // STEP VALUE SETTING
+        } else if (window.machineState === 'READY') {
+            // STEP VALUE SETTING (Only when machine is READY)
             if (!isSettingStep) {
                 isSettingStep = true;
                 stepInputBuffer = "";
-                showRemoteMsg("SET STEP DIST", "USE NUMS + OK");
+                showRemoteMsg("SET STEP DIST", "ENTER & PRESS OK");
             } else {
                 let val = parseFloat(stepInputBuffer);
                 if (!isNaN(val) && val > 0) {
