@@ -7,14 +7,31 @@ document.addEventListener('DOMContentLoaded', () => {
     window.selectedOriginType = 'TR'; // Default Origin: Top Right
 
     function showRemoteMsg(title, msg) {
-        const t = document.getElementById('remote-msg-title');
-        const m = document.getElementById('remote-msg-body');
-        if(t && m) { t.textContent = title; m.textContent = msg; }
+        const top = document.getElementById('startup-text-top');
+        const bot = document.getElementById('startup-text-bot');
+        const msgOverlay = document.getElementById('lcd-startup-msg');
+        const mainScreen = document.getElementById('lcd-main-screen');
+
+        if(top && bot && msgOverlay && mainScreen) {
+            top.textContent = title;
+            bot.textContent = msg;
+
+            // Auto-switch to message overlay if it's not already visible
+            if (msgOverlay.style.display === 'none') {
+                mainScreen.style.display = 'none';
+                msgOverlay.style.display = 'flex';
+            }
+        }
     }
     window.showRemoteMsg = showRemoteMsg;
 
     window.hideRemoteMsg = function() {
-        showRemoteMsg("NK105 G2", "READY (IDLE)");
+        const msgOverlay = document.getElementById('lcd-startup-msg');
+        const mainScreen = document.getElementById('lcd-main-screen');
+        if (msgOverlay && mainScreen) {
+            msgOverlay.style.display = 'none';
+            mainScreen.style.display = 'block';
+        }
     }
 
     const updateGearDisplay = () => {
@@ -143,13 +160,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Enter Input Mode
                     isSettingStep = true;
                     stepInputBuffer = "";
-                    showRemoteMsg("SET STEP DIST", "ENTER & PRESS OK");
+                    showRemoteMsg("SET STEP DIST", "____ mm");
                 } else {
                     // Confirm and Exit Input Mode
                     let val = parseFloat(stepInputBuffer);
                     if (!isNaN(val) && val > 0) {
                         window.stepValue = val;
-                        showRemoteMsg("STEP VALUE SET", val.toFixed(3) + " mm");
+                        showRemoteMsg("SUCCESS", "STEP: " + val.toFixed(3) + "mm");
 
                         const stepTag = document.getElementById('rem-step-val');
                         if(stepTag) {
@@ -157,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if(window.jogStep) stepTag.style.display = 'block';
                         }
                     } else {
-                        showRemoteMsg("CANCELLED", "KEEPING OLD STEP");
+                        showRemoteMsg("CANCELLED", "KEEPING OLD");
                     }
                     isSettingStep = false;
                     stepInputBuffer = "";
@@ -410,7 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const val = (k === 'clear') ? '.' : k;
                 if (val === '.' && stepInputBuffer.includes('.')) return;
                 stepInputBuffer += val;
-                showRemoteMsg("STEP DISTANCE", "VALUE: " + stepInputBuffer);
+                showRemoteMsg("SET STEP DIST", stepInputBuffer + " mm");
                 return;
             }
 
