@@ -271,17 +271,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (window.jogStep && window.stepValue > 0) {
-                // STEP MOVEMENT
+                // STEP MOVEMENT (SINGLE AXIS ONLY)
+                if (window.machineState !== 'READY') return;
+
                 const step = window.stepValue;
+
+                // Sync target to current pos to ensure movement starts from exact spot
+                window.targetPos.x = window.toolPos.x;
+                window.targetPos.y = window.toolPos.y;
+                window.targetPos.z = window.toolPos.z;
+
                 if (k === 'key-8') window.targetPos.y = Math.min(BED_L, window.toolPos.y + step);
-                if (k === 'key-2') window.targetPos.y = Math.max(0, window.toolPos.y - step);
-                if (k === 'key-4') window.targetPos.x = Math.min(BED_W, window.toolPos.x + step);
-                if (k === 'key-6') window.targetPos.x = Math.max(0, window.toolPos.x - step);
-                if (k === 'key-9') window.targetPos.z = Math.min(200, window.toolPos.z + step);
-                if (k === 'key-3') window.targetPos.z = Math.max(0, window.toolPos.z - step);
+                else if (k === 'key-2') window.targetPos.y = Math.max(0, window.toolPos.y - step);
+                else if (k === 'key-4') window.targetPos.x = Math.min(BED_W, window.toolPos.x + step);
+                else if (k === 'key-6') window.targetPos.x = Math.max(0, window.toolPos.x - step);
+                else if (k === 'key-9') window.targetPos.z = Math.min(200, window.toolPos.z + step);
+                else if (k === 'key-3') window.targetPos.z = Math.max(0, window.toolPos.z - step);
 
                 window.machineState = 'AUTO';
-                setTimeout(() => { if(window.machineState === 'AUTO') window.machineState = 'READY'; }, 200);
             } else {
                 // CONTINUOUS MOVEMENT
                 window.activeJogKeys.add(k);

@@ -743,6 +743,10 @@ function animate() {
                     if (!window.isSimulating) { moveBudget = 0; }
                 } else {
                     moveBudget = 0;
+                    // Reset to READY when single move target is reached
+                    if (window.machineState === 'AUTO' || window.machineState === 'ALIGNING' || window.machineState === 'PROBING') {
+                        window.machineState = 'READY';
+                    }
                 }
             }
         }
