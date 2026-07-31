@@ -39,7 +39,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('sidebar-start-btn')?.addEventListener('click', () => {
         if (window.machineState !== 'OFF') return;
 
-        window.machineState = 'BOOTING'; // Change state from OFF
+        window.machineState = 'BOOTING';
+        window.isHomed = false; // Reset homed status on start
 
         const lcd = document.getElementById('remote-lcd');
         const main = document.getElementById('lcd-main-screen');
@@ -64,6 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('sidebar-shutdown-btn')?.addEventListener('click', () => {
         isWaitingForHome = false; window.isSimulating = false; window.machineState = 'OFF'; window.spindleOn = false; window.targetRPM = 0;
+        window.isHomed = false; // Reset homed on shutdown
         if (typeof stopSpindleSound === 'function') stopSpindleSound();
         const lcd = document.getElementById('remote-lcd');
         if (lcd) lcd.style.background = "#050505";
@@ -76,9 +78,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- OK BUTTON (FOR STEP SETTING & CONFIRMATION) ---
     document.getElementById('key-ok')?.addEventListener('click', () => {
-        // Allow OK if machine is booting (waiting for home) OR if it's already running
         if (window.machineState === 'OFF') return;
 
+        console.log("OK Pressed. State:", window.machineState, "WaitingHome:", isWaitingForHome);
+
+        // CASE 1: Confirming Homing during Boot
         if (isWaitingForHome) {
             isWaitingForHome = false;
             window.targetPos.z = 200; // Lift to safe height
@@ -108,8 +112,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     showRemoteMsg("HOMING...", "MOVING TO HOME");
                 }
             }, 100);
-        } else if (window.machineState === 'READY' && window.isHomed) {
-            // STEP VALUE SETTING (Only after machine is HOMED and READY)
+            return;
+        }
+
+        // CASE 2: Machine is READY and already HOMED (Set Step)
+        if (window.machineState === 'READY' && window.isHomed) {
             if (!isSettingStep) {
                 isSettingStep = true;
                 stepInputBuffer = "";
@@ -131,12 +138,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 isSettingStep = false;
                 setTimeout(hideRemoteMsg, 1500);
             }
-        } else {
-            // If not homed, show error
-            if (window.machineState !== 'OFF' && !isWaitingForHome) {
+            return;
+        }
+
+        // CASE 3: Trying to set step before Homing OR Clicking too early during boot
+        if (!window.isHomed && window.machineState !== 'HOMING') {
+            if (window.machineState === 'BOOTING' && !isWaitingForHome) {
+                showRemoteMsg("PLEASE WAIT", "BOOTING SYSTEM...");
+            } else {
                 showRemoteMsg("ERROR", "HOME MACHINE FIRST");
-                setTimeout(hideRemoteMsg, 1500);
             }
+            setTimeout(hideRemoteMsg, 1500);
         }
     });
 
