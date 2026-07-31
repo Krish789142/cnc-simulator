@@ -77,13 +77,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- OK BUTTON (FOR STEP SETTING & CONFIRMATION) ---
-    document.getElementById('key-ok')?.addEventListener('click', () => {
+    document.getElementById('key-ok')?.addEventListener('click', (e) => {
         if (window.machineState === 'OFF') return;
 
-        console.log("OK Pressed. State:", window.machineState, "WaitingHome:", isWaitingForHome);
+        console.log("OK Clicked. Current isWaitingForHome:", isWaitingForHome);
 
         // CASE 1: Confirming Homing during Boot
-        if (isWaitingForHome) {
+        if (isWaitingForHome === true) {
             isWaitingForHome = false;
             window.isHomed = false;
 
@@ -107,12 +107,11 @@ document.addEventListener('DOMContentLoaded', () => {
             window.machineState = 'HOMING';
 
             const checkZ = setInterval(() => {
-                // If Z reached target, move XY to home
                 if (Math.abs(window.toolPos.z - 200) < 1) {
                     clearInterval(checkZ);
                     window.targetPos.x = 1397;
                     window.targetPos.y = 0;
-                    window.machineState = 'HOMING'; // Ensure state is still HOMING
+                    window.machineState = 'HOMING';
                     showRemoteMsg("HOMING...", "MOVING TO HOME");
                 }
             }, 100);
@@ -120,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // CASE 2: Machine is READY and already HOMED (Set Step)
-        if (window.machineState === 'READY' && window.isHomed) {
+        if (window.machineState === 'READY' && window.isHomed === true) {
             if (!isSettingStep) {
                 isSettingStep = true;
                 stepInputBuffer = "";
@@ -145,13 +144,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // CASE 3: Trying to set step before Homing OR Clicking too early during boot
-        if (!window.isHomed && window.machineState !== 'HOMING') {
-            if (window.machineState === 'BOOTING' && !isWaitingForHome) {
-                showRemoteMsg("PLEASE WAIT", "BOOTING SYSTEM...");
-            } else {
-                showRemoteMsg("ERROR", "HOME MACHINE FIRST");
-            }
+        // CASE 3: Guard
+        if (!window.isHomed && window.machineState !== 'HOMING' && window.machineState !== 'BOOTING') {
+            showRemoteMsg("ERROR", "HOME MACHINE FIRST");
             setTimeout(hideRemoteMsg, 1500);
         }
     });
