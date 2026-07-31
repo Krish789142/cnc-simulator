@@ -108,8 +108,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     showRemoteMsg("HOMING...", "MOVING TO HOME");
                 }
             }, 100);
-        } else if (window.machineState === 'READY') {
-            // STEP VALUE SETTING (Only when machine is READY)
+        } else if (window.machineState === 'READY' && window.isHomed) {
+            // STEP VALUE SETTING (Only after machine is HOMED and READY)
             if (!isSettingStep) {
                 isSettingStep = true;
                 stepInputBuffer = "";
@@ -129,6 +129,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     showRemoteMsg("INVALID VALUE", "KEEP OLD STEP");
                 }
                 isSettingStep = false;
+                setTimeout(hideRemoteMsg, 1500);
+            }
+        } else {
+            // If not homed, show error
+            if (window.machineState !== 'OFF' && !isWaitingForHome) {
+                showRemoteMsg("ERROR", "HOME MACHINE FIRST");
                 setTimeout(hideRemoteMsg, 1500);
             }
         }
